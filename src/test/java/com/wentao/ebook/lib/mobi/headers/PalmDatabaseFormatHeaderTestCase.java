@@ -11,13 +11,17 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class PalmDatabaseFormatHeaderTestCase {
     private BufferedInputStream inputStream;
     private byte[] wholeFileData;
 
-    private String[] files = new String[]{"", "test001-xuanzangfashizhuan.mobi", "test002-maoxuan1-4.mobi"};
-    String fileName = files[1];
+    private String[] files = new String[]{"", "test001-xuanzangfashizhuan.mobi", "test002-maoxuan1-4.mobi", "test003-shuyi.mobi"};
+    String fileName = files[3];
 
     @Before
     public void before() throws IOException {
@@ -83,5 +87,28 @@ public class PalmDatabaseFormatHeaderTestCase {
             System.arraycopy(header.getDecompressRecord(a, (int) palmDOCHeader.getRecordSize()), 0, decompressData, (a - 1) * (int) palmDOCHeader.getRecordSize(), (int) palmDOCHeader.getRecordSize());
         }
         System.out.println(new String(decompressData));
+    }
+
+    private AtomicInteger a = new AtomicInteger(0);
+    private final Object lock = new Object();
+    @Test
+    public void testVolatile() throws InterruptedException {
+        ExecutorService executorService = Executors.newFixedThreadPool(100);
+        
+        for (int i = 0;i<1000000;i++){
+            executorService.execute(new Increase());
+        }
+        executorService.shutdown();
+        executorService.awaitTermination(1, TimeUnit.MINUTES);
+        System.out.println(a);
+
+    }
+    class Increase implements Runnable{
+        @Override
+        public void run() {
+//            synchronized (lock){
+                a.getAndIncrement();   
+//            }
+        }
     }
 }
